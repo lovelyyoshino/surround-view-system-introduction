@@ -11,19 +11,19 @@ from surround_view import FisheyeCameraModel, PointSelector, display_image
 import surround_view.param_settings as settings
 
 
-def get_projection_map(camera_model, image):
-    und_image = camera_model.undistort(image)
-    name = camera_model.camera_name
-    gui = PointSelector(und_image, title=name)
-    dst_points = settings.project_keypoints[name]
+def get_projection_map(camera_model, image):#获取投影矩阵
+    und_image = camera_model.undistort(image)#去畸变图像
+    name = camera_model.camera_name#相机名称
+    gui = PointSelector(und_image, title=name)#获取去畸变图像的四个点
+    dst_points = settings.project_keypoints[name]#获取相机的四个点
     choice = gui.loop()
     if choice > 0:
         src = np.float32(gui.keypoints)
         dst = np.float32(dst_points)
-        camera_model.project_matrix = cv2.getPerspectiveTransform(src, dst)
-        proj_image = camera_model.project(und_image)
+        camera_model.project_matrix = cv2.getPerspectiveTransform(src, dst)#获得转换的点
+        proj_image = camera_model.project(und_image)#投影图像
 
-        ret = display_image("Bird's View", proj_image)
+        ret = display_image("Bird's View", proj_image)#显示投影图像
         if ret > 0:
             return True
         if ret < 0:
@@ -53,13 +53,13 @@ def main():
     else:
         shift = (0, 0)
 
-    camera_name = args.camera
-    camera_file = os.path.join(os.getcwd(), "yaml", camera_name + ".yaml")
-    image_file = os.path.join(os.getcwd(), "images", camera_name + ".png")
-    image = cv2.imread(image_file)
-    camera = FisheyeCameraModel(camera_file, camera_name)
-    camera.set_scale_and_shift(scale, shift)
-    success = get_projection_map(camera, image)
+    camera_name = args.camera#获取相机名称
+    camera_file = os.path.join(os.getcwd(), "yaml", camera_name + ".yaml")#获取相机的yaml文件
+    image_file = os.path.join(os.getcwd(), "images", camera_name + ".png")#获取相机的图像文件
+    image = cv2.imread(image_file)#读取图像
+    camera = FisheyeCameraModel(camera_file, camera_name)#获取相机的参数
+    camera.set_scale_and_shift(scale, shift)#设置相机的参数
+    success = get_projection_map(camera, image)#获取投影矩阵
     if success:
         print("saving projection matrix to yaml")
         camera.save_data()

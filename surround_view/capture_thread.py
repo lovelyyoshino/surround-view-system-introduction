@@ -6,7 +6,7 @@ from .structures import ImageFrame
 from .utils import gstreamer_pipeline
 
 
-class CaptureThread(BaseThread):
+class CaptureThread(BaseThread):#捕获相机的线程
 
     def __init__(self,
                  device_id,
@@ -24,7 +24,7 @@ class CaptureThread(BaseThread):
         api_preference: cv2.CAP_GSTREAMER for csi cameras, usually cv2.CAP_ANY would suffice.
         resolution: camera resolution (width, height).
         """
-        super(CaptureThread, self).__init__(parent)
+        super(CaptureThread, self).__init__(parent)#继承父类的构造函数
         self.device_id = device_id
         self.flip_method = flip_method
         self.use_gst = use_gst
@@ -74,10 +74,10 @@ class CaptureThread(BaseThread):
 
     def connect_camera(self):
         if self.use_gst:
-            options = gstreamer_pipeline(cam_id=self.device_id, flip_method=self.flip_method)
+            options = gstreamer_pipeline(cam_id=self.device_id, flip_method=self.flip_method)#获取gstreamer的pipeline
             self.cap.open(options, self.api_preference)
         else:
-            self.cap.open(self.device_id)
+            self.cap.open(self.device_id)#打开摄像头
         # return false if failed to open camera
         if not self.cap.isOpened():
             qDebug("Cannot open camera {}".format(self.device_id))
@@ -86,15 +86,15 @@ class CaptureThread(BaseThread):
             # try to set camera resolution
             if self.resolution is not None:
                 width, height = self.resolution
-                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+                self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)#设置摄像头的分辨率
+                self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)#设置摄像头的分辨率
                 # some camera may become closed if the resolution is not supported
                 if not self.cap.isOpened():
                     qDebug("Resolution not supported by camera device: {}".format(self.resolution))
                     return False
             # use the default resolution
             else:
-                width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))#获取摄像头的分辨率
                 height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 self.resolution = (width, height)
 

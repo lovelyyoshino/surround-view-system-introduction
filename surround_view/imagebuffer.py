@@ -5,16 +5,16 @@ from queue import Queue
 
 class Buffer(object):
 
-    def __init__(self, buffer_size=5):
+    def __init__(self, buffer_size=5):#初始化缓冲区
         self.buffer_size = buffer_size
         self.free_slots = QSemaphore(self.buffer_size)
         self.used_slots = QSemaphore(0)
         self.clear_buffer_add = QSemaphore(1)
         self.clear_buffer_get = QSemaphore(1)
-        self.queue_mutex = QMutex()
-        self.queue = Queue(self.buffer_size)
+        self.queue_mutex = QMutex()#初始化队列锁
+        self.queue = Queue(self.buffer_size)# class Buffer(object):
 
-    def add(self, data, drop_if_full=False):
+    def add(self, data, drop_if_full=False):#添加数据到缓冲区
         self.clear_buffer_add.acquire()
         if drop_if_full:
             if self.free_slots.tryAcquire():
@@ -25,7 +25,7 @@ class Buffer(object):
         else:
             self.free_slots.acquire()
             self.queue_mutex.lock()
-            self.queue.put(data)
+            self.queue.put(data)#添加数据到队列
             self.queue_mutex.unlock()
             self.used_slots.release()
 
@@ -33,7 +33,7 @@ class Buffer(object):
 
     def get(self):
         # acquire semaphores
-        self.clear_buffer_get.acquire()
+        self.clear_buffer_get.acquire()#获取锁
         self.used_slots.acquire()
         self.queue_mutex.lock()
         data = self.queue.get()
@@ -87,7 +87,7 @@ class Buffer(object):
         return self.queue.qsize() == 0
 
 
-class MultiBufferManager(object):
+class MultiBufferManager(object):#多缓冲区管理器
 
     """
     Class for synchronizing capture threads from different cameras.
@@ -101,7 +101,7 @@ class MultiBufferManager(object):
         self.arrived = 0
         self.buffer_maps = dict()
 
-    def bind_thread(self, thread, buffer_size, sync=True):
+    def bind_thread(self, thread, buffer_size, sync=True):#绑定线程
         self.create_buffer_for_device(thread.device_id, buffer_size, sync)
         thread.buffer_manager = self
 

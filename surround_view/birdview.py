@@ -71,7 +71,7 @@ class ProjectedImageBuffer(object):
                 "devices: {}\n".format(self.sync_devices))
 
 
-def FI(front_image):
+def FI(front_image):#获取前视图
     return front_image[:, :xl]
 
 
@@ -119,7 +119,7 @@ def RM(right_image):
     return right_image[yt:yb, :]
 
 
-class BirdView(BaseThread):
+class BirdView(BaseThread):#鸟瞰图拼接
 
     def __init__(self,
                  proc_buffer_manager=None,
@@ -127,19 +127,19 @@ class BirdView(BaseThread):
                  buffer_size=8,
                  parent=None):
         super(BirdView, self).__init__(parent)
-        self.proc_buffer_manager = proc_buffer_manager
-        self.drop_if_full = drop_if_full
-        self.buffer = Buffer(buffer_size)
-        self.image = np.zeros((settings.total_h, settings.total_w, 3), np.uint8)
-        self.weights = None
-        self.masks = None
-        self.car_image = settings.car_image
+        self.proc_buffer_manager = proc_buffer_manager#接收图像的缓冲区
+        self.drop_if_full = drop_if_full#buffer是否满了就丢弃
+        self.buffer = Buffer(buffer_size)#缓冲区
+        self.image = np.zeros((settings.total_h, settings.total_w, 3), np.uint8)#拼接图像
+        self.weights = None#白平衡权重
+        self.masks = None#设置掩模
+        self.car_image = settings.car_image#车辆图像
         self.frames = None
 
     def get(self):
         return self.buffer.get()
 
-    def update_frames(self, images):
+    def update_frames(self, images):#更新图像
         self.frames = images
 
     def load_weights_and_masks(self, weights_image, masks_image):
@@ -159,39 +159,39 @@ class BirdView(BaseThread):
 
     @property
     def FL(self):
-        return self.image[:yt, :xl]
+        return self.image[:yt, :xl]#拿到到车辆的左上角
 
     @property
     def F(self):
-        return self.image[:yt, xl:xr]
+        return self.image[:yt, xl:xr]#拿到到车辆的上中间区域
 
     @property
     def FR(self):
-        return self.image[:yt, xr:]
+        return self.image[:yt, xr:]#拿到到车辆的右上角
 
     @property
     def BL(self):
-        return self.image[yb:, :xl]
+        return self.image[yb:, :xl]#拿到到车辆的左下角
 
     @property
     def B(self):
-        return self.image[yb:, xl:xr]
+        return self.image[yb:, xl:xr]#拿到到车辆的下中间
 
     @property
     def BR(self):
-        return self.image[yb:, xr:]
+        return self.image[yb:, xr:]#拿到到车辆的右下角
 
     @property
     def L(self):
-        return self.image[yt:yb, :xl]
+        return self.image[yt:yb, :xl]#拿到车辆坐标的左边中间
 
     @property
     def R(self):
-        return self.image[yt:yb, xr:]
+        return self.image[yt:yb, xr:]#拿到车辆坐标的右边中间
 
     @property
     def C(self):
-        return self.image[yt:yb, xl:xr]
+        return self.image[yt:yb, xl:xr]#拿到车辆坐标的中间
 
     def stitch_all_parts(self):
         front, back, left, right = self.frames
@@ -209,20 +209,20 @@ class BirdView(BaseThread):
 
     def make_luminance_balance(self):
 
-        def tune(x):
+        def tune(x):#调整亮度
             if x >= 1:
                 return x * np.exp((1 - x) * 0.5)
             else:
                 return x * np.exp((1 - x) * 0.8)
 
-        front, back, left, right = self.frames
-        m1, m2, m3, m4 = self.masks
-        Fb, Fg, Fr = cv2.split(front)
+        front, back, left, right = self.frames#拿到图像
+        m1, m2, m3, m4 = self.masks#拿到掩模
+        Fb, Fg, Fr = cv2.split(front)#拿到图像的三个通道
         Bb, Bg, Br = cv2.split(back)
         Lb, Lg, Lr = cv2.split(left)
         Rb, Rg, Rr = cv2.split(right)
 
-        a1 = utils.mean_luminance_ratio(RII(Rb), FII(Fb), m2)
+        a1 = utils.mean_luminance_ratio(RII(Rb), FII(Fb), m2)#拿到图像的三个通道
         a2 = utils.mean_luminance_ratio(RII(Rg), FII(Fg), m2)
         a3 = utils.mean_luminance_ratio(RII(Rr), FII(Fr), m2)
 
@@ -297,17 +297,17 @@ class BirdView(BaseThread):
         return self
 
     def get_weights_and_masks(self, images):
-        front, back, left, right = images
-        G0, M0 = utils.get_weight_mask_matrix(FI(front), LI(left))
-        G1, M1 = utils.get_weight_mask_matrix(FII(front), RII(right))
-        G2, M2 = utils.get_weight_mask_matrix(BIII(back), LIII(left))
-        G3, M3 = utils.get_weight_mask_matrix(BIV(back), RIV(right))
-        self.weights = [np.stack((G, G, G), axis=2) for G in (G0, G1, G2, G3)]
-        self.masks = [(M / 255.0).astype(np.int) for M in (M0, M1, M2, M3)]
-        return np.stack((G0, G1, G2, G3), axis=2), np.stack((M0, M1, M2, M3), axis=2)
+        front, back, left, right = images#获得images的四个部分
+        G0, M0 = utils.get_weight_mask_matrix(FI(front), LI(left))#获得前左的权重矩阵
+        G1, M1 = utils.get_weight_mask_matrix(FII(front), RII(right))#获得前右的权重矩阵
+        G2, M2 = utils.get_weight_mask_matrix(BIII(back), LIII(left))#获得后左的权重矩阵
+        G3, M3 = utils.get_weight_mask_matrix(BIV(back), RIV(right))#获得后右的权重矩阵
+        self.weights = [np.stack((G, G, G), axis=2) for G in (G0, G1, G2, G3)]#将四个权重矩阵按照顺序排列
+        self.masks = [(M / 255.0).astype(np.int) for M in (M0, M1, M2, M3)]#将四个mask矩阵按照顺序排列
+        return np.stack((G0, G1, G2, G3), axis=2), np.stack((M0, M1, M2, M3), axis=2)#将四个权重矩阵和四个mask矩阵按照顺序排列
 
     def make_white_balance(self):
-        self.image = utils.make_white_balance(self.image)
+        self.image = utils.make_white_balance(self.image)#调用make_white_balance函数
 
     def run(self):
         if self.proc_buffer_manager is None:
